@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Inventory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+        main {
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            margin: auto;
+        }
+        label {
+            margin: 10px 0 5px;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input[type="search"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Log Inventory Management</h1>
+    </header>
+    <main>
+        <section id="inventory-form">
+            <h2>Add or Edit a Log</h2>
+            <form id="logForm">
+                <input type="hidden" id="editId">
+                <label for="logName">Log Name:</label>
+                <input type="text" id="logName" name="logName" required>
+                <label for="logType">Log Type:</label>
+                <input type="text" id="logType" name="logType" required>
+                <label for="logLength">Log Length (m):</label>
+                <input type="number" id="logLength" name="logLength" min="0" required>
+                <label for="logQuantity">Quantity:</label>
+                <input type="number" id="logQuantity" name="logQuantity" min="1" required>
+                <button type="button" onclick="saveLog()" id="saveBtn">Add Log</button>
+            </form>
+        </section>
+        <section id="inventory-list">
+            <h2>Current Inventory</h2>
+            <table id="logTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Log Name</th>
+                        <th>Log Type</th>
+                        <th>Length (m)</th>
+                        <th>Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script>
+        let logCounter = 1;
+        let logData = JSON.parse(localStorage.getItem('logs')) || [];
+
+        function saveLog() {
+            console.log("saveLog function invoked");
+            const logName = document.getElementById('logName').value;
+            const logType = document.getElementById('logType').value;
+            const logLength = document.getElementById('logLength').value;
+            const logQuantity = document.getElementById('logQuantity').value;
+            const editId = document.getElementById('editId').value;
+
+            console.log(`Input values - Name: ${logName}, Type: ${logType}, Length: ${logLength}, Quantity: ${logQuantity}, EditID: ${editId}`);
+
+            if (editId) {
+                console.log("Editing existing log");
+                logData = logData.map(log => log.id == editId ? {
+                    id: log.id,
+                    name: logName,
+                    type: logType,
+                    length: logLength,
+                    quantity: logQuantity
+                } : log);
+            } else {
+                console.log("Adding new log");
+                logData.push({
+                    id: logCounter++,
+                    name: logName,
+                    type: logType,
+                    length: logLength,
+                    quantity: logQuantity
+                });
+            }
+            console.log("Updated log data:", logData);
+            localStorage.setItem('logs', JSON.stringify(logData));
+            renderTable();
+        }
+
+        function renderTable() {
+            console.log("renderTable function invoked");
+            const tableBody = document.querySelector('#logTable tbody');
+            tableBody.innerHTML = '';
+
+            logData.forEach(log => {
+                console.log(`Rendering log - ID: ${log.id}, Name: ${log.name}`);
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${log.id}</td>
+                    <td>${log.name}</td>
+                    <td>${log.type}</td>
+                    <td>${log.length}</td>
+                    <td>${log.quantity}</td>
+                    <td>
+                        <button onclick="editLog(${log.id})">Edit</button>
+                        <button onclick="deleteLog(${log.id})">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        function editLog(id) {
+            console.log(`editLog function invoked with ID: ${id}`);
+            const log = logData.find(log => log.id === id);
+            if (log) {
+                console.log(`Editing log:`, log);
+                document.getElementById('editId').value = log.id;
+                document.getElementById('logName').value = log.name;
+                document.getElementById('logType').value = log.type;
+                document.getElementById('logLength').value = log.length;
+                document.getElementById('logQuantity').value = log.quantity;
+            }
+        }
+
+        function deleteLog(id) {
+            console.log(`deleteLog function invoked with ID: ${id}`);
+            logData = logData.filter(log => log.id !== id);
+            console.log("Log deleted. Updated log data:", logData);
+            localStorage.setItem('logs', JSON.stringify(logData));
+            renderTable();
+        }
+
+        window.onload = function () {
+            console.log("Window loaded - Rendering table");
+            renderTable();
+        };
+    </script>
+</body>
+</html>
